@@ -24,6 +24,8 @@ class LearningAgent(Agent):
         ###########
         # Set any additional class parameters as needed
 
+        self.t = 0 #t is episode counter
+
 
     def reset(self, destination=None, testing=False):
         """ The reset function is called at the beginning of each trial.
@@ -39,13 +41,19 @@ class LearningAgent(Agent):
         # Update epsilon using a decay function of your choice
         # Update additional class parameters as needed
         # If 'testing' is True, set epsilon and alpha to 0
+        
+        
+
 
         if testing == True:
             self.epsilon=0
             self.alpha=0
         else:
-            self.epsilon = self.epsilon-0.05
-        
+            self.t = self.t+1
+            #self.epsilon = self.epsilon-0.05
+            # self.epsilon=math.cos(1*self.t)
+            self.epsilon = math.pow(0.99,self.t)
+
         return None
 
     def build_state(self):
@@ -63,8 +71,6 @@ class LearningAgent(Agent):
         ###########
         # Set 'state' as a tuple of relevant data for the agent        
         state = (waypoint, inputs['light'], inputs['oncoming'], inputs['left'], inputs['right'])
-        if not state in self.Q:
-            self.Q[state] = {key: 0 for key in self.valid_actions}
 
         return state
 
@@ -78,7 +84,8 @@ class LearningAgent(Agent):
         ###########
         # Calculate the maximum Q-value of all actions for a given state
 
-        maxQ = None
+        qlist = self.Q[state].values()
+        maxQ = max(qlist)
 
         return maxQ 
 
@@ -93,12 +100,20 @@ class LearningAgent(Agent):
         # If it is not, create a new dictionary for that state
         #   Then, for each action available, set the initial Q-value to 0.0
 
+        if self.learning==True:
+            if self.Q.has_key(state) == False:
+                self.Q[state]=dict()
+                self.Q[state][self.valid_actions[0]] = 0.0
+                self.Q[state][self.valid_actions[1]] = 0.0
+                self.Q[state][self.valid_actions[2]] = 0.0
+                self.Q[state][self.valid_actions[3]] = 0.0
+
+
         return
 
 
     def choose_action(self, state):
-        """ The choose_action function is called when the agent is asked to choose
-            which action to take, based on the 'state' the smartcab is in. """
+        """ The choose_action function is called when the agent is asked to choose which action to take, based on the 'state' the smartcab is in. """
 
         # Set the agent state and default action
         self.state = state
@@ -138,6 +153,9 @@ class LearningAgent(Agent):
         # When learning, implement the value iteration update rule
         #   Use only the learning rate 'alpha' (do not use the discount factor 'gamma')
 
+        if self.learning == True:
+            self.Q[state][action] = (1-self.alpha)*self.Q[state][action] + self.alpha*reward
+
         return
 
 
@@ -173,7 +191,7 @@ def run():
     #   learning   - set to True to force the driving agent to use Q-learning
     #    * epsilon - continuous value for the exploration factor, default is 1
     #    * alpha   - continuous value for the learning rate, default is 0.5
-    agent = env.create_agent(LearningAgent, alpha=0., learning=True)
+    agent = env.create_agent(LearningAgent, alpha=0.1, learning=True,epsilon=1)
     
     ##############
     # Follow the driving agent
@@ -195,7 +213,7 @@ def run():
     # Flags:
     #   tolerance  - epsilon tolerance before beginning testing, default is 0.05 
     #   n_test     - discrete number of testing trials to perform, default is 0
-    sim.run(n_test =10, tolerance=0.05)
+    sim.run(n_test =10, tolerance=0.01)
 
 
 if __name__ == '__main__':
