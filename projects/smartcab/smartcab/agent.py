@@ -70,7 +70,7 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Set 'state' as a tuple of relevant data for the agent        
-        state = (waypoint, inputs['light'], inputs['oncoming'], inputs['left'], inputs['right'])
+        state = (waypoint, inputs['light'], inputs['oncoming'], inputs['left'])
 
         return state
 
@@ -133,11 +133,23 @@ class LearningAgent(Agent):
             if self.epsilon>random.random():
                 action = random.choice(self.valid_actions)
             else:
-                keys = self.Q[state].keys()
+                maxq_lst=[]
+                for act in self.valid_actions:
+                    if self.Q[state][act] == self.get_maxQ(state):
+                        maxq_lst.append(act)
+                action = random.choice(maxq_lst)
 
-                for key in keys:
-                    if self.Q[state][key] == self.get_maxQ(state):
-                        action = key
+                # Option 1    
+                # best_actions = [action for action in self.valid_actions if self.Q[state][action] == maxQ]
+                # action = random.choice(best_actions)
+
+                #Option 2
+                # keys = self.Q[state].keys()
+                # random.shuffle(keys)
+                # #to randomly select from a list of actions equal to the maxq value. 
+                # for key in keys:
+                #     if self.Q[state][key] == self.get_maxQ(state):
+                #         action = key
 
         return action
 
@@ -213,7 +225,7 @@ def run():
     # Flags:
     #   tolerance  - epsilon tolerance before beginning testing, default is 0.05 
     #   n_test     - discrete number of testing trials to perform, default is 0
-    sim.run(n_test =10, tolerance=0.01)
+    sim.run(n_test =20, tolerance=0.01)
 
 
 if __name__ == '__main__':
